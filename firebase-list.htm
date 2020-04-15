@@ -1,0 +1,124 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+</head>
+<body>
+
+<div class="container my-5">
+    <h2>Event listener</h2>
+    <ul>
+    </ul>
+    <form>
+        <label for="colelction">Add a new entry:</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="collection" required>
+            <div class="input-group-append">
+                <input type="submit" value="add" class="btn btn-outline-secondary">
+            </div>
+        </div>
+    </form>
+</div>
+
+<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Facilis optio voluptas unde ratione cum aspernatur, ex, ut eveniet porro temporibus magnam. Voluptatem, optio dolor numquam eveniet sint atque cum id!</p>
+
+<script src="https://www.gstatic.com/firebasejs/7.9.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.9.2/firebase-firestore.js"></script>
+<script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyDqYfwYOAx2IP_5N0jB106y9H3_V6ccH5s",
+    authDomain: "udemy-javascript-663bf.firebaseapp.com",
+    databaseURL: "https://udemy-javascript-663bf.firebaseio.com",
+    projectId: "udemy-javascript-663bf",
+    storageBucket: "udemy-javascript-663bf.appspot.com",
+    messagingSenderId: "169699922171",
+    appId: "1:169699922171:web:1e3bd55973f8991990a05e",
+    measurementId: "G-PPKPZP7G0L"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+<script>
+    const list = document.querySelector('ul');
+    const form = document.querySelector('form');
+
+    const addCollection = (collection, id) => {
+        let time = collection.added_in.toDate();
+        let html = `
+            <li data-id="${id}">
+                <div>${collection.title}</div>
+                <div>${collection.author}</div>
+                <div>${time}</div>
+                <button class="btn btn-danger btn-sm my-2">delete</button>
+            </li>
+        `;
+        list.innerHTML += html;
+    }
+
+    //Delete collection from the DOM
+    const deleteCollection = (id) => {
+        const collection = document.querySelectorAll('li');
+        collection.forEach(collect => {
+            if(collect.getAttribute('data-id') === id){
+                collect.remove();
+            }
+        });
+    }
+
+    //get documents on load time retrival
+    // db.collection('collection1').get().then(snapshoot => {
+    //     snapshoot.docs.forEach(doc => {
+    //         addCollection(doc.data(), doc.id);
+    //     })
+    // }).catch(err => {
+    //     console.log(err);
+    // });
+
+    // get documents real time listener
+    db.collection('collection1').onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            const doc = change.doc;
+            if(change.type === 'added'){
+                addCollection(doc.data(), doc.id);
+            } else if (change.type === 'removed'){
+                deleteCollection(doc.id);
+            }
+        })
+    });
+
+
+    //add documents
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+
+        const now = new Date();
+        const collection = {
+            title: form.collection.value,
+            added_in: firebase.firestore.Timestamp.fromDate(now),
+        };
+
+        db.collection('collection1').add(collection).then(() => {
+            console.log('added to the db');
+            document.getElementById('collection').value='';
+        }).catch(err => {
+            console.log(err);
+        });
+    });
+
+    //deleting data
+    list.addEventListener('click', e => {
+        if(e.target.tagName === 'BUTTON'){
+            const id = e.target.parentElement.getAttribute('data-id');
+            db.collection('collection1').doc(id).delete().then(() => {
+                console.log('stuff deleted');
+            });
+        }
+    });
+    </script>
+</body>
+</html>
